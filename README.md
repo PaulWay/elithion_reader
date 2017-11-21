@@ -7,8 +7,8 @@ Written by Paul Wayper.
 
 ## The eLithion Lithiumate Lite
 
-The "eLithion"[http://elithion.com]
-"Lithiumate Lite"[http://elithion.com/lithiumate__lite.php]
+The [eLithion](http://elithion.com)
+[Lithiumate Lite](http://elithion.com/lithiumate__lite.php)
 is a full-featured digital battery management system for Lithium
 batteries.  It monitors the voltage and other statistics on every cell
 in the battery and controls the charging and discharging of the
