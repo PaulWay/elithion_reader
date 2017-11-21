@@ -1,7 +1,7 @@
 # elithion_reader
 
-A Perl program to log the output of the eLithion Lithiumate Lite
-battery management system.
+Programs to log the output of the eLithion Lithiumate Lite battery
+management system.
 
 Written by Paul Wayper.
 
@@ -26,7 +26,7 @@ Lithiumate Lite in its default setup.
 
 1. The software only runs on Windows.  At the moment, with upgrades to
    .NET components, the software crashes immediately upon start-up with
-   no way of recovering or diagnosing.  This makes getting any more
+   no way of recovering or diagnosing it.  This makes getting any more
    information out of it difficult.
 
 2. To monitor the battery you have to run the software on a machine
@@ -57,6 +57,20 @@ So my objectives are basically:
 
 * When in range of my WiFi (i.e. it has an IP address), attempt to ssh
   to my home server and upload the files via `rsync`.
+
+# What we have
+
+## `elith_reader.py`
+
+`elith_reader.py` is a basic program to read a serial port, writing 'v'
+to it every five seconds and collecting the output into some kind of
+CSV file.  The output is divided into the output type, the number of
+elements, the actual data, and the checksum.
+
+This program also copes with the serial port disappearing and
+reappearing as the BMS is turned off and on (see the Notes).  A new
+file is written each time the elith_reader is able to read from the
+serial port.
 
 # References
 
