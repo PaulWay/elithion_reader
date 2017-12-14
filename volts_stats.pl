@@ -8,6 +8,8 @@ use Date::Parse;
 
 my ($mincell, $minrval, $mindate) = (0, 255, 0);
 my ($maxcell, $maxrval, $maxdate) = (0, 0, 0);
+my ($minvolt, $minvdate) = (255, 0);
+my ($maxvolt, $maxvdate) = (0, 0);
 my ($total, $count);
 my (@rminima, @rmaxima);
 my @total; my $cell_count;
@@ -40,10 +42,12 @@ foreach my $fname (@ARGV) {
             warn "Warning: len not correct on $lenstr,$datastr in $fname\n";
             next;
         }
+        my $volts = 0;
         while (my ($cell, $val) = each @values) {
             my $rawval = $rawvals[$cell];
             $cell++; # humans count from 1.
             $total += $val;
+            $volts += $val;
             $total[$cell] += $val;
             $count ++;
             if ($rawval < $minrval) {
@@ -67,6 +71,14 @@ foreach my $fname (@ARGV) {
                 $rmaxima[$cell] = $rawval;
             }
         }
+        if ($volts < $minvolt) {
+            $minvolt = $volts;
+            $minvdate = $datestr;
+        }
+        if ($volts > $maxvolt) {
+            $maxvolt = $volts;
+            $maxvdate = $datestr;
+        }
     }
     close $fh;
 }
@@ -74,6 +86,8 @@ foreach my $fname (@ARGV) {
 my $minval = val2volts($minrval); my $maxval = val2volts($maxrval);
 printf "Minimum: %2d was %3d (%.2fV) at %s\n", $mincell, $minrval, $minval, $mindate;
 printf "Maximum: %2d was %3d (%.2fV) at %s\n", $maxcell, $maxrval, $maxval, $maxdate;
+printf "Pack minimum: %5.1fV at %s\n", $minvolt, $minvdate;
+printf "Pack maximum: %5.1fV at %s\n", $maxvolt, $maxvdate;
 printf "From %d values, average = %3.2fV\n", $count, $total / $count;
 foreach my $i (sort { ($rmaxima[$a] - $rminima[$a]) <=> ($rmaxima[$b] - $rminima[$b]) } 1..$#rmaxima) {
     my $minvolt = val2volts($rminima[$i]); my $maxvolt = val2volts($rmaxima[$i]);
