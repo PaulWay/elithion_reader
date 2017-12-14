@@ -13,7 +13,8 @@ output_prefixes = {
     'q': 'q_stats',
     's': 'stats',
     't': 'temperatures',
-    'v': 'voltages'
+    'v': 'voltages',
+    'x': 'extended',
 }
 csv_suffix = '.csv'
 raw_suffix = '.raw'
@@ -44,14 +45,20 @@ parser.add_argument(
     help='the time between finishing one read and starting the next'
 )
 parser.add_argument(
-    '--stats', '-s', choices=output_prefixes.keys(), type=str,
-    action='store', default=''.join(sorted(output_prefixes.keys())),
-    help='the type(s) of data to collect'
+    '--stats', '-s', type=str, action='store',
+    default=''.join(sorted(output_prefixes.keys())),
+    help='the type(s) of data to collect as a string of letters'
 )
 args = parser.parse_args()
 device_name = args.device
 output_dir = args.outdir
 stats_to_read = args.stats
+for stat in stats_to_read:
+    if stat not in output_prefixes:
+        print("Error: I need one of",
+            ','.join(sorted(output_prefixes.keys())),
+            "as a stat letter")
+        exit
 read_delay = args.readdelay
 
 output_handles = {} # type -> handle, date
