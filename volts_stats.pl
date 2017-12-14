@@ -10,6 +10,7 @@ my ($mincell, $minrval, $mindate) = (0, 255, 0);
 my ($maxcell, $maxrval, $maxdate) = (0, 0, 0);
 my ($total, $count);
 my (@rminima, @rmaxima);
+my @total; my $cell_count;
 
 # Values for scaling calculation
 my $unsc_avg = 141; my $unsc_max = 165; my $unsc_range = $unsc_max - $unsc_avg;
@@ -32,6 +33,7 @@ foreach my $fname (@ARGV) {
             warn "Warning: got all high read at $datestr in $fname\n";
             next;
         }
+        $cell_count = $len;
         my @rawvals = map { hex($_) } unpack "A2"x$len, $datastr;
         my @values = map { val2volts($_) } @rawvals;
         if (length($datastr) != $len*2) {
@@ -42,6 +44,7 @@ foreach my $fname (@ARGV) {
             my $rawval = $rawvals[$cell];
             $cell++; # humans count from 1.
             $total += $val;
+            $total[$cell] += $val;
             $count ++;
             if ($rawval < $minrval) {
                 $mincell = $cell;
@@ -75,7 +78,8 @@ printf "From %d values, average = %3.2fV\n", $count, $total / $count;
 foreach my $i (sort { ($rmaxima[$a] - $rminima[$a]) <=> ($rmaxima[$b] - $rminima[$b]) } 1..$#rmaxima) {
     my $minvolt = val2volts($rminima[$i]); my $maxvolt = val2volts($rmaxima[$i]);
     my $range = $rmaxima[$i] - $rminima[$i]; my $vrange = val2volts($range);
-    printf "Range for cell %2d = %3d (%3.2fV): %3d (%.2fV) - %3d (%.2fV)\n",
-     $i, $range, $vrange, $rminima[$i], $minvolt, $rmaxima[$i], $maxvolt;
+    my $avvolts = $total[$i] / $count * $cell_count;
+    printf "Range for cell %2d = %3d (%3.2fV): %3d (%.2fV) - %3d (%.2fV), average %.2fV.\n",
+     $i, $range, $vrange, $rminima[$i], $minvolt, $rmaxima[$i], $maxvolt, $avvolts;
 }
 
