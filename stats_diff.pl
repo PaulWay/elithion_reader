@@ -11,6 +11,16 @@ my $linepart = '--==--==--==--==--##';
 my ($lastdate, $laststats);
 my @field_states;
 
+# Here for convenience I'm numbering bytes from one; with a map to
+# convert them back to zero-based offsets.
+#my %ignore_bytes = map { $_ - 1 => 'ignore' }
+#    (5, 6, # seconds since on
+#    16, 17, # some more-or-less incrementing value
+#    21, 49, # matched 80/82
+#    24, 51, # matched 86/88
+#    72, 73, 74, 75 # amp-hours until charged
+#    );
+
 sub stats2fields {
     my ($stats) = @_;
     return map { hex($_) } unpack("A2"x(length($stats)/2), $stats);
@@ -21,7 +31,7 @@ sub update_field_states {
     }
 }
 sub markline {
-    return "---------- ---------------: " . 
+    return "---------- ---------------: " .
            $linepart x int(scalar(@field_states) / 10) .
            substr($linepart, 0, (scalar(@field_states) % 10) * 2) .
            "\n";
@@ -59,45 +69,55 @@ while (<>) {
     my @fields = stats2fields($stats);
     # Increment state counts
     update_field_states(@fields);
-    
-    # We know we've got a difference now:
-    if ($format == 0) {
-        print "Change at $date:\n";
-    } elsif ($format == 1) {
-        $markcount ++;
-        if ($markcount == $marklines) {
-            print markline();
-            $markcount = 0;
-        }
-        print "$date: ";
-    }
+
+    my $diff_lines = '';
     while (my ($bytepos, $field) = each @fields) {
         my $strpos = $bytepos * 2;
-        if ($field != $lastfields[$bytepos]) {
+        if ($field != $lastfields[$bytepos]
+          # and not exists $ignore_bytes{$bytepos}
+          ) {
             if ($format == 0) {
-                printf "... byte %02d (at %02d in string) changed from %3d (%02X) to %3d (%02X)\n",
+                $diff_lines .= sprintf
+                 "... byte %02d (at %02d in string) changed from %3d (%02X) to %3d (%02X)\n",
                  $bytepos, $strpos,
                  $lastfields[$bytepos], $lastfields[$bytepos],
                  $field, $field;
             } elsif ($format == 1) {
-                printf "%02X", $field;
+                $diff_lines .= sprintf "%02X", $field;
             }
-        } else {
+        } else { # a byte that's the same or we're ignoring
             if ($format == 1) {
-                print '  ';
+                $diff_lines .= '  ';
             }
         }
     }
-    if ($format == 1) {
-        print "\n";
+
+    # We know we've got a difference now:
+    if ($diff_lines !~ m{^\s+$}) {
+        if ($format == 0) {
+            print "Change at $date:\n";
+        } elsif ($format == 1) {
+            $markcount ++;
+            if ($markcount == $marklines) {
+                print markline();
+                $markcount = 0;
+            }
+            print "$date: ";
+        }
+        print $diff_lines;
+        if ($format == 1) {
+            print "\n";
+        }
     }
+
+    # Finally store the last changed stats
     $laststats = $stats;
     $lastdate = $date;
 }
 
 foreach my $byte (0..$#field_states) {
     printf "Byte %2d states: %s\n",
-     $byte, join(', ', 
+     $byte, join(', ',
         map { sprintf "%03d/%02X (*%d)", $_, $_, $field_states[$byte][$_] }
         grep { defined $field_states[$byte][$_] }
         (0..255)
