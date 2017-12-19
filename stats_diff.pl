@@ -10,16 +10,26 @@ my $linepart = '--==--==--==--==--##';
 
 my ($lastdate, $laststats);
 my @field_states;
+# Equal/up/down counts:
+# in that order because <=> gives -1, 0 or 1 => array indices!
+my @eud_counts;
 
 # Here for convenience I'm numbering bytes from one; with a map to
 # convert them back to zero-based offsets.
-#my %ignore_bytes = map { $_ - 1 => 'ignore' }
-#    (5, 6, # seconds since on
-#    16, 17, # some more-or-less incrementing value
-#    21, 49, # matched 80/82
-#    24, 51, # matched 86/88
-#    72, 73, 74, 75 # amp-hours until charged
-#    );
+my @ignore_columns =
+    (5,  6, # seconds since on
+     7,  8, # amps?
+     9, 10, # amps?
+    16, 17, # some more-or-less incrementing value
+    21, 49, # matched 80/82
+    24, 51, # matched 86/88
+    68, 69, # amps
+    72, 73, 74, 75 # amp-hours until charged
+    );
+my $ignore_columns = 0; # Set to 1 to ignore above columns.
+my %ignore_bytes; if ($ignore_columns) {
+    %ignore_bytes = map { $_ - 1 => 'ignore' } (@ignore_columns);
+}
 
 sub stats2fields {
     my ($stats) = @_;
@@ -55,6 +65,8 @@ while (<>) {
         if ($format == 1) {
             print markline();
         }
+        # Initialise equal-up-down counts
+        @eud_counts = map { [ 0, 0, 0 ] } 0..$#fields;
         next;
     }
     if ($stats eq $laststats) {
@@ -73,14 +85,16 @@ while (<>) {
     my $diff_lines = '';
     while (my ($bytepos, $field) = each @fields) {
         my $strpos = $bytepos * 2;
-        if ($field != $lastfields[$bytepos]
-          # and not exists $ignore_bytes{$bytepos}
+        my $lastfield = $lastfields[$bytepos];
+        $eud_counts[$bytepos][$field <=> $lastfield] ++;
+        if ($field != $lastfield
+          and not exists $ignore_bytes{$bytepos}
           ) {
             if ($format == 0) {
                 $diff_lines .= sprintf
                  "... byte %02d (at %02d in string) changed from %3d (%02X) to %3d (%02X)\n",
                  $bytepos, $strpos,
-                 $lastfields[$bytepos], $lastfields[$bytepos],
+                 $lastfield, $lastfield,
                  $field, $field;
             } elsif ($format == 1) {
                 $diff_lines .= sprintf "%02X", $field;
@@ -95,18 +109,14 @@ while (<>) {
     # We know we've got a difference now:
     if ($diff_lines !~ m{^\s+$}) {
         if ($format == 0) {
-            print "Change at $date:\n";
+            print "Change at $date:\n$diff_lines";
         } elsif ($format == 1) {
             $markcount ++;
             if ($markcount == $marklines) {
                 print markline();
                 $markcount = 0;
             }
-            print "$date: ";
-        }
-        print $diff_lines;
-        if ($format == 1) {
-            print "\n";
+            print "$date: $diff_lines\n";
         }
     }
 
@@ -117,9 +127,11 @@ while (<>) {
 
 foreach my $byte (0..$#field_states) {
     printf "Byte %2d states: %s\n",
-     $byte, join(', ',
+     $byte+1, join(', ',
         map { sprintf "%03d/%02X (*%d)", $_, $_, $field_states[$byte][$_] }
         grep { defined $field_states[$byte][$_] }
         (0..255)
      );
+    printf "... movements: %5d equal, %5d up, %5d down\n",
+     @{ $eud_counts[$byte] };
 }
