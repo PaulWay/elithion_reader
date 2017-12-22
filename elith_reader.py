@@ -27,7 +27,7 @@ line_re = re.compile(
     r'\|(?P<type>[qrstvx])' +
     r'(?P<len>' + hb + r')' +
     r'(?P<data>(?:' + hb + r')+)' +
-    r'(?P<csum>' + hb + r')\|' + 
+    r'(?P<csum>' + hb + r')\|' +
     r'(?P<rest>.*)$'
 )
 
@@ -85,8 +85,15 @@ def output_type_data(type_, len_, data, csum):
         output_handles[type_] = {
             'handle': outfile,
             'date': now.date(),
+            'last': data,
         }
     else:
+        # Do we have the same data as last time?  If so, don't bother
+        # writing that.
+        last = output_handles[type_]['last']
+        if data == last:
+            return
+        # Get the file handle
         outfile = output_handles[type_]['handle']
 
     outfile.write(','.join([
@@ -119,7 +126,7 @@ def read_data(dev):
                     buf = match.group('rest')
                     print "got data for", match.group('type'), "at", datetime.now().isoformat(), "\r"
                     match = line_re.search(buf)
-        
+
         time.sleep(read_delay)
 
 
@@ -128,10 +135,10 @@ while True:
         print 'serial port device', device_name, 'not found, waiting...'
         time.sleep(1)
         continue
-    
-    dev = serial.Serial(device_name, 57600, timeout=1, xonxoff=False, rtscts=False)
+
+    dev = serial.Serial(device_name, 57600, timeout=0, xonxoff=False, rtscts=False)
     print "opened serial port", device_name
-    
+
     try:
         read_data(dev)
     except serial.serialutil.SerialException:
