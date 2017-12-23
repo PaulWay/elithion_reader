@@ -3,7 +3,15 @@
 use warnings;
 use strict;
 
+use Getopt::Long;
+
 my $type = 'extended';
+my $do_conversions = 0;
+
+GetOptions(
+    'type|t=s'      => \$type,
+    'conversions|c' => \$do_conversions,
+);
 
 # Scaler functions
 
@@ -25,8 +33,43 @@ my $tohexs = sub {
 my $tohexl = sub {
     return sprintf "%08X", $_[0] & 0xffffffff;
 };
+my $chg2pct = sub {
+    return $_[0]/2;
+};
 
 my %field_defs = (
+    # The names don't matter here - if you're filling in space, name
+    # them after column numbers.
+    'stats' => [
+        [ '01-04',      'L>' ],
+        [ '05-08',      'L>' ],
+        [ '09-12',      'L>' ],
+        [ '13-16',      'L>' ],
+        [ '17-20',      'L>' ],
+        [ '21-24',      'L>' ],
+        [ '25-28',      'L>' ],
+        [ '29-32',      'L>' ],
+        [ '33-36',      'L>' ],
+        [ '37-40',      'L>' ],
+        [ '41-44',      'L>' ],
+        [ '45-48',      'L>' ],
+        [ '49-52',      'L>' ],
+        [ '53-56',      'L>' ],
+        [ '57-60',      'L>' ],
+        [ '61-64',      'L>' ],
+        [ '65-68',      'L>' ],
+        [ '69-72',      'L>' ],
+        [ '73-76',      'L>' ],
+        [ '77-80',      'L>' ],
+        [ '81-c8',      'c' ],
+        [ 'pwr_flag',   'c',    $tohexc ],      # 82
+        [ 'count1',     's>'],                  # 83-84
+        [ 'chg_pct',    'c',    $chg2pct ],     # 85
+        [ 'count2',     'c' ],                  # 86
+        [ 'count3',     'XL>',  $longto24bit],  # 87-89
+        [ 'count4',     'XL>',  $longto24bit],  # 90-92
+        [ 'count5',     'L>' ],                 # 93-96
+    ],
     'extended' => [
         [ 'flag-01',    'c' ],                  # 01
         [ 'times_on',   'S>' ],                 # 02-03
@@ -70,6 +113,10 @@ my %field_defs = (
     ],
 );
 
+if (not exists $field_defs{$type}) {
+    die "Error: type must be one of ", join(', ', sort keys %field_defs), ".\n";
+}
+
 my @field_defs = @{ $field_defs{$type} };
 
 my $unpackformat = join(' ', map { $_->[1] } @{ $field_defs{$type} } );
@@ -84,11 +131,13 @@ while (<>) {
     # Unpack values via format
     my @vals = unpack($unpackformat, $bin);
     # Process with any scalers defined
-    while (my ($fnum, $defref) = each @field_defs) {
-        if (scalar @$defref > 2) {
-            # print "converting $field_defs[$fnum][0] from $vals[$fnum]";
-            $vals[$fnum] = $defref->[2]($vals[$fnum]);
-            # print " to $vals[$fnum]\n";
+    if ($do_conversions) {
+        while (my ($fnum, $defref) = each @field_defs) {
+            if (scalar @$defref > 2) {
+                # print "converting $field_defs[$fnum][0] from $vals[$fnum]";
+                $vals[$fnum] = $defref->[2]($vals[$fnum]);
+                # print " to $vals[$fnum]\n";
+            }
         }
     }
     print join(',', $fields[0], @vals), "\n";
