@@ -61,55 +61,55 @@ my %field_defs = (
         [ '69-72',      'L>' ],
         [ '73-76',      'L>' ],
         [ '77-80',      'L>' ],
-        [ '81-c8',      'c' ],
-        [ 'pwr_flag',   'c',    $tohexc ],      # 82
-        [ 'count1',     's>'],                  # 83-84
-        [ 'chg_pct',    'c',    $chg2pct ],     # 85
-        [ 'count2',     'c' ],                  # 86
+        [ '81-c8',      'C' ],
+        [ 'pwr_flag',   'C',    $tohexc ],      # 82
+        [ 'count1',     'S>'],                  # 83-84
+        [ 'chg_pct',    'C',    $chg2pct ],     # 85
+        [ 'count2',     'C' ],                  # 86
         [ 'count3',     'XL>',  $longto24bit],  # 87-89
         [ 'count4',     'XL>',  $longto24bit],  # 90-92
         [ 'count5',     'L>' ],                 # 93-96
     ],
     'extended' => [
-        [ 'flag-01',    'c' ],                  # 01
+        [ 'flag-01',    'C' ],                  # 01
         [ 'times_on',   'S>' ],                 # 02-03
         [ 'seconds_on', 'XL>',  $longto24bit ], # 04-06 - back up one byte and read a long
         [ 'charge_a',   's>',   $amps ],        # 07-08
         [ 'charge_b',   's>',   $amps ],        # 09-10
         [ '11-12',      's>' ],                 # 11-12
-        [ 'flag-13',    'c',    $tohexc ],      # 13
-        [ '14',         'c' ],                  # 14
+        [ 'flag-13',    'C',    $tohexc ],      # 13
+        [ '14',         'C' ],                  # 14
         [ 'count-15-16', 's>' ],                # 15-16
-        [ 'flag-17',    'c',    $tohexc ],
-        [ '18',         'c',    $tohexc ],
-        [ '19',         'c',    $tohexc ],
+        [ 'flag-17',    'C',    $tohexc ],
+        [ '18',         'C',    $tohexc ],
+        [ '19',         'C',    $tohexc ],
         [ '20-21',      's>' ],
         [ '22-23',      's>' ],
         [ 'flag-24-27', 'L>',   $tohexl ],
         [ 'flag-28-29', 's>',   $tohexs ],
         [ 'flag-30-31', 's>',   $tohexs ],
-        [ 'flag-32',    'c',    $tohexc ],
+        [ 'flag-32',    'C',    $tohexc ],
         [ 'const-33-34', 's>' ],
         [ 'flag-35-38', 'L>',   $tohexl ],
-        [ 'flag-39',    'c',    $tohexc ],
+        [ 'flag-39',    'C',    $tohexc ],
         [ 'const-40-41', 's>' ],
         [ 'const-43-43', 's>' ],
         [ 'cflag-44-47', 'L>',  $tohexl ],
-        [ 'cflag-48',   'c',    $tohexc ],
+        [ 'cflag-48',   'C',    $tohexc ],
         [ 'flag-49-52', 'L>',   $tohexl ],
         [ 'flag-53-56', 'L>',   $tohexl ],
         [ 'flag-57-60', 'L>',   $tohexl ],
         [ 'flag-61-62', 's>',   $tohexs ],
-        [ 'flag-63',    'c',    $tohexc ],
+        [ 'flag-63',    'C',    $tohexc ],
         [ 'charge_c',   's>' ],                 # 64-65
         [ 'charge_d',   's>' ],                 # 66-67
         [ 'main_amps',  's>',   $amps ],        # 68-69
         [ 'count-70-71', 's>' ],                # 70-71
         [ 'AHrs_down',  'L>',   $amphrs ],      # 72-75
-        [ '76',         'c' ],                  # 76
+        [ '76',         'C' ],                  # 76
         [ 'flag-77-78', 's>', $tohexs ],        # 77-78
-        [ 'flag-79',    'c', $tohexc ],         # 79
-        [ 'flag-80',    'c', $tohexc ],         # 80
+        [ 'flag-79',    'C', $tohexc ],         # 79
+        [ 'flag-80',    'C', $tohexc ],         # 80
     ],
 );
 
@@ -121,7 +121,7 @@ my @field_defs = @{ $field_defs{$type} };
 
 my $unpackformat = join(' ', map { $_->[1] } @{ $field_defs{$type} } );
 
-print "Unpack format for $type = $unpackformat\n";
+# print "Unpack format for $type = $unpackformat\n";
 
 print join(',', 'date', grep { $_ ne 'ignore' } map { $_->[0] } @field_defs ), "\n";
 while (<>) {
