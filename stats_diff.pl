@@ -16,7 +16,7 @@ my @eud_counts;
 
 # Here for convenience I'm numbering bytes from one; with a map to
 # convert them back to zero-based offsets.
-my @ignore_columns =
+my @ignore_columns_extended =
     (5,  6, # seconds since on
      7,  8, # amps?
      9, 10, # amps?
@@ -28,7 +28,7 @@ my @ignore_columns =
     );
 my $ignore_columns = 0; # Set to 1 to ignore above columns.
 my %ignore_bytes; if ($ignore_columns) {
-    %ignore_bytes = map { $_ - 1 => 'ignore' } (@ignore_columns);
+    %ignore_bytes = map { $_ - 1 => 'ignore' } (@ignore_columns_extended);
 }
 
 sub stats2fields {
