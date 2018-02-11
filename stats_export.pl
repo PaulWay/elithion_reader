@@ -158,32 +158,50 @@ my %field_defs = (
     ],
 );
 
-if (not exists $field_defs{$type}) {
-    die "Error: type must be one of ", join(', ', sort keys %field_defs), ".\n";
-}
+sub process_file {
+    my ($infile, $outfile) = @_;
+    open my $ifh, '<', $infile;
 
-my @field_defs = @{ $field_defs{$type} };
-
-my $unpackformat = join(' ', map { $_->[1] } @{ $field_defs{$type} } );
-
-# print "Unpack format for $type = $unpackformat\n";
-
-print join(',', 'date', map { $_->[0] } @field_defs ), "\n";
-while (<>) {
-    chomp;
-    my @fields = split m{,};
-    my $bin = pack("H*", $fields[3]);
-    # Unpack values via format
-    my @vals = unpack($unpackformat, $bin);
-    # Process with any scalers defined
-    if ($do_conversions) {
-        while (my ($fnum, $defref) = each @field_defs) {
-            if (scalar @$defref > 2) {
-                # print "converting $field_defs[$fnum][0] from $vals[$fnum]";
-                $vals[$fnum] = $defref->[2]($vals[$fnum]);
-                # print " to $vals[$fnum]\n";
-            }
+    my $intype = $type;
+    if ($type eq 'auto') {
+        if ($infile =~ m{^(.*/)*(?<intype>\w+)\.[^/]+$}) {
+            $intype = $+{'intype'};
+        } else {
+            warn "Warning: could not automatically determine type of file '$infile' - ignoring\n";
+            return;
         }
     }
-    print join(',', $fields[0], @vals), "\n";
+    if (not exists $field_defs{$intype}) {
+        warn "Warning: type '$intype' " . ($type eq 'auto' ? 'from filename ' : '')
+         . "unknown - ignoring\n";
+        return;
+    }
+    my $field_defsref = $field_defs{$intype};
+    my $unpackformat = join(' ', map { $_->[1] } @$field_defsref );
+
+    open my $ofh, '>', $outfile;
+    print $ofh join(',', 'date', map { $_->[0] } @$field_defsref ), "\n";
+    while (<$ifh>) {
+        chomp;
+        my @fields = split m{,};
+        my $bin = pack("H*", $fields[3]);
+        # Unpack values via format
+        my @vals = unpack($unpackformat, $bin);
+        # Process with any scalers defined
+        if ($do_conversions) {
+            while (my ($fnum, $defref) = each @$field_defsref) {
+                if (scalar @$defref > 2) {
+                    # print "converting $field_defs[$fnum][0] from $vals[$fnum]";
+                    $vals[$fnum] = $defref->[2]($vals[$fnum]);
+                    # print " to $vals[$fnum]\n";
+                }
+            }
+        }
+        print $ofh join(',', $fields[0], @vals), "\n";
+    }
+    close $ifh;
+    close $ofh;
 }
+
+#foreach my $file (@ARGV) {
+process_file($ARGV[0], 'processed/' . $ARGV[0]);
