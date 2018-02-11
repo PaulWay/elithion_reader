@@ -117,6 +117,7 @@ def read_data(dev):
                 buf += dev.read(255)
                 match = line_re.search(buf)
                 tries += 1
+                time.sleep(0.5)
 
             if (tries == max_tries):
                 print "Got no matching data, retrying command"
