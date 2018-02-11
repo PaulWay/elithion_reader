@@ -36,6 +36,11 @@ my $tohexl = sub {
 my $chg2pct = sub {
     return $_[0]/2;
 };
+my $unsc_avg = 141; my $unsc_max = 165; my $unsc_range = $unsc_max - $unsc_avg;
+my $scal_avg = 3.2; my $scal_max = 3.6; my $scal_range = $scal_max - $scal_avg;
+my $tovolts = sub {
+    return sprintf('%1.3f', (($_[0] - $unsc_avg) / $unsc_range) * $scal_range + $scal_avg);
+};
 
 my %field_defs = (
     # The names don't matter here - if you're filling in space, name
@@ -107,9 +112,49 @@ my %field_defs = (
         [ 'count-70-71', 's>' ],                # 70-71
         [ 'AHrs_down',  'L>',   $amphrs ],      # 72-75
         [ '76',         'C' ],                  # 76
-        [ 'flag-77-78', 's>', $tohexs ],        # 77-78
-        [ 'flag-79',    'C', $tohexc ],         # 79
-        [ 'flag-80',    'C', $tohexc ],         # 80
+        [ 'flag-77-78', 's>',   $tohexs ],      # 77-78
+        [ 'flag-79',    'C',    $tohexc ],      # 79
+        [ 'flag-80',    'C',    $tohexc ],      # 80
+    ],
+    'voltages' => [
+        [ 'cell_1',     'C',    $tovolts ],
+        [ 'cell_2',     'C',    $tovolts ],
+        [ 'cell_3',     'C',    $tovolts ],
+        [ 'cell_4',     'C',    $tovolts ],
+        [ 'cell_5',     'C',    $tovolts ],
+        [ 'cell_6',     'C',    $tovolts ],
+        [ 'cell_7',     'C',    $tovolts ],
+        [ 'cell_8',     'C',    $tovolts ],
+        [ 'cell_9',     'C',    $tovolts ],
+        [ 'cell_10',    'C',    $tovolts ],
+        [ 'cell_11',    'C',    $tovolts ],
+        [ 'cell_12',    'C',    $tovolts ],
+        [ 'cell_13',    'C',    $tovolts ],
+        [ 'cell_14',    'C',    $tovolts ],
+        [ 'cell_15',    'C',    $tovolts ],
+        [ 'cell_16',    'C',    $tovolts ],
+        [ 'cell_17',    'C',    $tovolts ],
+        [ 'cell_18',    'C',    $tovolts ],
+        [ 'cell_19',    'C',    $tovolts ],
+        [ 'cell_20',    'C',    $tovolts ],
+        [ 'cell_21',    'C',    $tovolts ],
+        [ 'cell_22',    'C',    $tovolts ],
+        [ 'cell_23',    'C',    $tovolts ],
+        [ 'cell_24',    'C',    $tovolts ],
+        [ 'cell_25',    'C',    $tovolts ],
+        [ 'cell_26',    'C',    $tovolts ],
+        [ 'cell_27',    'C',    $tovolts ],
+        [ 'cell_28',    'C',    $tovolts ],
+        [ 'cell_29',    'C',    $tovolts ],
+        [ 'cell_30',    'C',    $tovolts ],
+        [ 'cell_31',    'C',    $tovolts ],
+        [ 'cell_32',    'C',    $tovolts ],
+        [ 'cell_33',    'C',    $tovolts ],
+        [ 'cell_34',    'C',    $tovolts ],
+        [ 'cell_35',    'C',    $tovolts ],
+        [ 'cell_36',    'C',    $tovolts ],
+        [ 'cell_37',    'C',    $tovolts ],
+        [ 'cell_38',    'C',    $tovolts ],
     ],
 );
 
@@ -123,7 +168,7 @@ my $unpackformat = join(' ', map { $_->[1] } @{ $field_defs{$type} } );
 
 # print "Unpack format for $type = $unpackformat\n";
 
-print join(',', 'date', grep { $_ ne 'ignore' } map { $_->[0] } @field_defs ), "\n";
+print join(',', 'date', map { $_->[0] } @field_defs ), "\n";
 while (<>) {
     chomp;
     my @fields = split m{,};
