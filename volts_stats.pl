@@ -45,6 +45,10 @@ foreach my $fname (@ARGV) {
         my $volts = 0;
         while (my ($cell, $val) = each @values) {
             my $rawval = $rawvals[$cell];
+            if ($rawval == 255 or $rawval == 0) {
+                warn "Warning: ignoring bad read of $rawval from cell $cell at $datestr in $fname\n";
+                next;
+            }
             $cell++; # humans count from 1.
             $total += $val;
             $volts += $val;
