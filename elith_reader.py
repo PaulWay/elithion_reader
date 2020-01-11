@@ -11,6 +11,7 @@ device_name = '/dev/ttyUSB0'
 output_dir = '/home/pi/'
 output_prefixes = {
     'q': 'q_stats',
+    'r': 'resistance',
     's': 'stats',
     't': 'temperatures',
     'v': 'voltages',
