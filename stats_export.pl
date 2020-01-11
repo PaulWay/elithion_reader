@@ -38,9 +38,12 @@ my $chg2pct = sub {
 };
 my $unsc_avg = 141; my $unsc_max = 165; my $unsc_range = $unsc_max - $unsc_avg;
 my $scal_avg = 3.2; my $scal_max = 3.6; my $scal_range = $scal_max - $scal_avg;
-my $tovolts = sub {
-    return sprintf('%1.3f', (($_[0] - $unsc_avg) / $unsc_range) * $scal_range + $scal_avg);
+my $tovolts_old = sub {
+ 0   return sprintf('%1.3f', (($_[0] - $unsc_avg) / $unsc_range) * $scal_range + $scal_avg);
 };
+my $tovolts = sub {
+    return sprintf('%1.3f', $_[0] * 0.01 + 2.0);
+}
 
 my %field_defs = (
     # The names don't matter here - if you're filling in space, name
@@ -89,10 +92,11 @@ my %field_defs = (
         [ '18',         'C',    $tohexc ],
         [ '19',         'C',    $tohexc ],
         [ '20-21',      's>' ],
-        [ '22-23',      's>' ],
+        [ '22-23',      's>'            ],
         [ 'flag-24-27', 'L>',   $tohexl ],
         [ 'flag-28-29', 's>',   $tohexs ],
-        [ 'flag-30-31', 's>',   $tohexs ],
+        [ 'flag-30',    'C',    $tohexc ],
+        [ 'bank_1_loads', 'C'           ],
         [ 'flag-32',    'C',    $tohexc ],
         [ 'const-33-34', 's>' ],
         [ 'flag-35-38', 'L>',   $tohexl ],
