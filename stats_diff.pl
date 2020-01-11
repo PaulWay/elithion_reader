@@ -2,11 +2,31 @@
 
 use warnings;
 use strict;
+use Getopt::Long;
 
 my $format = 1;
 my $marklines = ($ENV{LINES} / 2) || 25;
 my $markcount = 0;
-my $linepart = '--==--==--==--==--##';
+my @column_list;
+my $column_opt;
+
+GetOptions('columns|c=s' => \$column_opt);
+
+if ($column_opt) {
+	foreach my $column_part (split m{,}, $column_opt) {
+		if ((index $column_part, '-') < 1) {
+			push @column_list, [$column_part - 1, 1];
+			next;
+		}
+		my ($column_start, $column_end) = split m{-}, $column_part;
+		if ($column_end < $column_start) {
+			print "Fail: end $column_end < start $column_start - ignoring\n";
+			next;
+		}
+		my $length = $column_end - $column_start + 1;
+		push @column_list, [$column_start - 1, $length];
+	}
+}
 
 my ($lastdate, $laststats);
 my @field_states;
@@ -40,30 +60,47 @@ sub update_field_states {
         $field_states[$byte][$stat]++;
     }
 }
+my $linepart = '--==--==--==--==--';
 sub markline {
-    return "---------- ---------------: " .
-           $linepart x int(scalar(@field_states) / 10) .
-           substr($linepart, 0, (scalar(@field_states) % 10) * 2) .
-           "\n";
+    my $line = "";
+    if (@column_list) {
+		return join '', map { sprintf('%02d', $_) } 1..scalar(@field_states);
+	}
+    foreach my $i (1..(scalar(@field_states)/10)) {
+		$line .= $linepart . sprintf('%02d', $i * 10);
+	}
+    $line .= substr($linepart, 0, (scalar(@field_states) % 10) * 2);
+	return $line;
 }
 
+sub trim_columns {
+	my ($in_line) = @_;
+	return $in_line unless @column_list;
+	return join '.', map {
+		substr($in_line, $_->[0]*2, $_->[1]*2)
+	} @column_list;
+}
+
+my $markline;
 while (<>) {
     chomp;
     my @line = split m{,};
     next unless scalar(@line) == 5;
     my ($date, $stats) = @line[0,3];
+    $date =~ s{\..*}{};  # remove microseconds, unneeded.
     # Fields are date, type, len, stats and checksum
     if (not $laststats) {
         # First line - collect last stats and continue
-        print "$date: $stats\n";
+        print $date, ': ', trim_columns($stats), "\n";
         $lastdate = $date;
         $laststats = $stats;
         # Store initial stat states and count of 1
         my @fields = stats2fields($stats);
         @field_states = map { [ ] } 0..$#fields;
         update_field_states(@fields);
+        $markline = markline();
         if ($format == 1) {
-            print markline();
+            print '---------- --------: ', trim_columns($markline), "\n";
         }
         # Initialise equal-up-down counts
         @eud_counts = map { [ 0, 0, 0 ] } 0..$#fields;
@@ -113,9 +150,12 @@ while (<>) {
         } elsif ($format == 1) {
             $markcount ++;
             if ($markcount == $marklines) {
-                print markline();
+                print '---------- --------: ', trim_columns($markline), "\n";
                 $markcount = 0;
             }
+            if (@column_list) {
+				$diff_lines = trim_columns($diff_lines);
+			}
             print "$date: $diff_lines\n";
         }
     }
