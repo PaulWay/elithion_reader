@@ -33,8 +33,9 @@ sub date_to_tstamp {
     my ($date) = @_;
     # Dates in format '2017-12-13T16:04:29.004730'
     if ($date =~ m{(?P<yr>\d{4})-(?P<mon>\d{2})-(?P<day>\d{2})T(?P<hour>\d{2}):(?P<min>\d{2}):(?P<sec>\d{2}.\d+)}) {
-        return timelocal(@+{qw{ sec min hr day mon yr }}) + 
-            ($tstamp < $fudge_date_from) ? 3600 : 0;
+        my $tstamp = timelocal(@+{qw{ sec min hr day mon yr }});
+        $tstamp += 3600 if $tstamp < $fudge_date_from;
+        return $tstamp;
     } else {
         warn "Warning: Couldn't parse $date into a timestamp\n";
         # Fudge - return now
